@@ -4,7 +4,7 @@ import random
 import time
 import re
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # إعدادات البوت
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -18,13 +18,32 @@ TEXTS = [
     "كتاب ≈ مفتاح ≈ المعرفة ≈ والعلم ≈ ينير ≈ العقول ≈ ويوسع ≈ الآفاق ≈ نحو ≈ المستقبل",
     "طفل ≈ يلعب ≈ في ≈ الحديقة ≈ الكبيرة ≈ مع ≈ أصدقائه ≈ بسعادة ≈ وفرح ≈ غامر",
     "سفر ≈ يجلب ≈ تجارب ≈ جديدة ≈ وذكريات ≈ جميلة ≈ تبقى ≈ في ≈ القلب ≈ للأبد",
-    "قهوة ≈ صباحية ≈ تمنح ≈ الطاقة ≈ والنشاط ≈ لبداية ≈ يوم ≈ مليء ≈ بالإنجازات ≈ والعمل"
+    "قهوة ≈ صباحية ≈ تمنح ≈ الطاقة ≈ والنشاط ≈ لبداية ≈ يوم ≈ مليء ≈ بالإنجازات ≈ والعمل",
+    "بحر ≈ واسع ≈ عميق ≈ تزهر ≈ فيه ≈ الأسماك ≈ والشعاب ≈ المرجانية ≈ الملونة ≈ الرائعة",
+    "مدرسة ≈ تعلّم ≈ الأطفال ≈ العلوم ≈ والأدب ≈ وتعدهم ≈ لمستقبل ≈ مشرق ≈ وحافل ≈ بالنجاح",
+    "حديقة ≈ زهور ≈ ملونة ≈ تفوح ≈ منها ≈ الروائح ≈ العطرة ≈ في ≈ فصل ≈ الربيع",
+    "طعام ≈ صحي ≈ يساعد ≈ في ≈ بناء ≈ جسم ≈ قوي ≈ ويحمي ≈ من ≈ الأمراض",
+    "رياضة ≈ منتظمة ≈ تقوي ≈ الجسم ≈ والعقل ≈ وتعزز ≈ الصحة ≈ النفسية ≈ والبدنية ≈ معاً",
+    "قمر ≈ يضيء ≈ السماء ≈ ليلاً ≈ بنور ≈ أبيض ≈ جميل ≈ يبعث ≈ على ≈ الهدوء",
+    "أسرة ≈ متحابة ≈ هي ≈ أساس ≈ السعادة ≈ والاستقرار ≈ في ≈ حياة ≈ كل ≈ إنسان",
+    "صداقة ≈ حقيقية ≈ كنز ≈ ثمين ≈ لا ≈ يقدر ≈ بثمن ≈ وتدوم ≈ طوال ≈ العمر",
+    "تعلم ≈ لغة ≈ جديدة ≈ يفتح ≈ أبواباً ≈ كثيرة ≈ للتواصل ≈ مع ≈ ثقافات ≈ مختلفة",
+    "عمل ≈ جاد ≈ يؤدي ≈ إلى ≈ نجاح ≈ كبير ≈ وتحقيق ≈ الأحلام ≈ والطموحات ≈ المرجوة",
+    "طبيعة ≈ خلابة ≈ تريح ≈ الأعصاب ≈ وتجدد ≈ الطاقة ≈ وتزيد ≈ من ≈ الإبداع",
+    "موسيقى ≈ هادئة ≈ تهدئ ≈ النفس ≈ وتذكي ≈ المشاعر ≈ وتجعل ≈ الحياة ≈ أجمل ≈ وأروع",
+    "قراءة ≈ كتب ≈ تزيد ≈ من ≈ المعرفة ≈ وتطور ≈ الشخصية ≈ وتوسع ≈ المدارك ≈ الفكرية",
+    "ابتسامة ≈ بسيطة ≈ قد ≈ تغير ≈ يوم ≈ شخص ≈ وتجلب ≈ السعادة ≈ له ≈ وللآخرين",
+    "عطاء ≈ بدون ≈ مقابل ≈ يجلب ≈ البركة ≈ والسعادة ≈ للقلب ≈ وللحياة ≈ بأكملها"
 ]
 
 # قائمة الكلمات للتكرار
 REPEAT_WORDS = [
     "في", "كان", "كيف", "من", "طير", "كسر", "خشب", "طوب", "بيت", "سين",
-    "عين", "جيم", "كتب", "خبر", "حلم", "جمل", "تعب", "حسد", "نار", "برد"
+    "عين", "جيم", "كتب", "خبر", "حلم", "جمل", "تعب", "حسد", "نار", "برد",
+    "علي", "عمر", "قطر", "درب", "خطر", "علم", "صوت", "صعب", "سهل", "حول",
+    "وبر", "شرب", "اكل", "وقت", "لون", "ورد", "بصر", "جبل", "حليب", "ثوب",
+    "نور", "دين", "عنب", "ختم", "قمر", "شمس", "نجم", "بحر", "سعر", "متر",
+    "عنبر", "غرب"
 ]
 
 # قاموس لتتبع حالة كل مستخدم
@@ -112,7 +131,7 @@ def validate_repeat_text(expected_text, user_input):
     
     return True, ""
 
-def start_command(update: Update, context: CallbackContext):
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = """
 مرحباً بك في بوت اختبار سرعة الكتابة! ✨
 
@@ -121,9 +140,9 @@ def start_command(update: Update, context: CallbackContext):
 • اكتب `22334` لبدء اختبار التكرار
 • اكتب `عرض` لعرض هذه التعليمات مرة أخرى
 """
-    update.message.reply_text(welcome_text)
+    await update.message.reply_text(welcome_text)
 
-def handle_message(update: Update, context: CallbackContext):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     message_text = update.message.text
     
@@ -134,7 +153,7 @@ def handle_message(update: Update, context: CallbackContext):
             'original_text': unique_text,
             'start_time': time.time()
         }
-        update.message.reply_text(f'{unique_text}')
+        await update.message.reply_text(f'{unique_text}')
     
     elif message_text == '22334':
         repeat_text = generate_unique_repeat_pattern(user_id)
@@ -143,10 +162,10 @@ def handle_message(update: Update, context: CallbackContext):
             'original_text': repeat_text,
             'start_time': time.time()
         }
-        update.message.reply_text(f'{repeat_text}')
+        await update.message.reply_text(f'{repeat_text}')
     
     elif message_text == 'عرض':
-        start_command(update, context)
+        await start_command(update, context)
     
     elif user_id in user_data and 'original_text' in user_data[user_id]:
         original_text = user_data[user_id]['original_text']
@@ -160,7 +179,7 @@ def handle_message(update: Update, context: CallbackContext):
                 words = len(original_text.split())
                 wpm = (words / time_taken) * 60
                 response = f"وحش ذي سرعتك {wpm:.2f} WPM"
-                update.message.reply_text(response)
+                await update.message.reply_text(response)
                 del user_data[user_id]
         
         else:
@@ -170,21 +189,23 @@ def handle_message(update: Update, context: CallbackContext):
                 words = len(message_text.split())
                 wpm = (words / time_taken) * 60
                 response = f"وحش ذي سرعتك {wpm:.2f} WPM"
-                update.message.reply_text(response)
+                await update.message.reply_text(response)
                 del user_data[user_id]
+
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.error(f'حدث خطأ: {context.error}')
 
 def main():
     try:
         print("🚀 بدء تشغيل البوت...")
-        updater = Updater(BOT_TOKEN, use_context=True)
-        dp = updater.dispatcher
+        application = Application.builder().token(BOT_TOKEN).build()
         
-        dp.add_handler(CommandHandler("start", start_command))
-        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+        application.add_handler(CommandHandler('start', start_command))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+        application.add_error_handler(error_handler)
         
         print("✅ البوت يعمل الآن!")
-        updater.start_polling()
-        updater.idle()
+        application.run_polling()
         
     except Exception as e:
         print(f"❌ خطأ في تشغيل البوت: {e}")
