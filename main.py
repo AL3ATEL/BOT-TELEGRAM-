@@ -3,9 +3,8 @@ import logging
 import random
 import time
 import re
-import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 # إعدادات البوت
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -113,7 +112,7 @@ def validate_repeat_text(expected_text, user_input):
     
     return True, ""
 
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def start_command(update: Update, context: CallbackContext):
     welcome_text = """
 مرحباً بك في بوت اختبار سرعة الكتابة! ✨
 
@@ -122,9 +121,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • اكتب `22334` لبدء اختبار التكرار
 • اكتب `عرض` لعرض هذه التعليمات مرة أخرى
 """
-    await update.message.reply_text(welcome_text)
+    update.message.reply_text(welcome_text)
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def handle_message(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     message_text = update.message.text
     
@@ -135,7 +134,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'original_text': unique_text,
             'start_time': time.time()
         }
-        await update.message.reply_text(f'{unique_text}')
+        update.message.reply_text(f'{unique_text}')
     
     elif message_text == '22334':
         repeat_text = generate_unique_repeat_pattern(user_id)
@@ -144,10 +143,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'original_text': repeat_text,
             'start_time': time.time()
         }
-        await update.message.reply_text(f'{repeat_text}')
+        update.message.reply_text(f'{repeat_text}')
     
     elif message_text == 'عرض':
-        await start_command(update, context)
+        start_command(update, context)
     
     elif user_id in user_data and 'original_text' in user_data[user_id]:
         original_text = user_data[user_id]['original_text']
@@ -161,7 +160,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 words = len(original_text.split())
                 wpm = (words / time_taken) * 60
                 response = f"وحش ذي سرعتك {wpm:.2f} WPM"
-                await update.message.reply_text(response)
+                update.message.reply_text(response)
                 del user_data[user_id]
         
         else:
@@ -171,23 +170,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 words = len(message_text.split())
                 wpm = (words / time_taken) * 60
                 response = f"وحش ذي سرعتك {wpm:.2f} WPM"
-                await update.message.reply_text(response)
+                update.message.reply_text(response)
                 del user_data[user_id]
-
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logging.error(f'حدث خطأ: {context.error}')
 
 def main():
     try:
         print("🚀 بدء تشغيل البوت...")
-        application = Application.builder().token(BOT_TOKEN).build()
+        updater = Updater(BOT_TOKEN, use_context=True)
+        dp = updater.dispatcher
         
-        application.add_handler(CommandHandler('start', start_command))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        application.add_error_handler(error_handler)
+        dp.add_handler(CommandHandler("start", start_command))
+        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
         
         print("✅ البوت يعمل الآن!")
-        application.run_polling()
+        updater.start_polling()
+        updater.idle()
         
     except Exception as e:
         print(f"❌ خطأ في تشغيل البوت: {e}")
