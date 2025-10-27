@@ -1,57 +1,17 @@
+import os
 import logging
 import random
 import time
 import re
-import os
-from flask import Flask
-from threading import Thread
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # إعدادات البوت
-BOT_TOKEN = os.environ['BOT_TOKEN']
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
 
-# إنشاء تطبيق Flask
-app = Flask('')
-
-@app.route('/')
-def home():
-    return """
-    <html>
-        <head>
-            <title>بوت سرعة الكتابة</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .status { color: green; font-size: 24px; margin-bottom: 20px; }
-            </style>
-        </head>
-        <body>
-            <div class="status">✅ البوت يعمل بشكل طبيعي</div>
-            <div>بوت اختبار سرعة الكتابة على تليجرام</div>
-            <div>البوت نشط وجاهز للاستخدام</div>
-        </body>
-    </html>
-    """
-
-@app.route('/ping')
-def ping():
-    return "pong"
-
-def run_flask():
-    try:
-        # تشغيل الخادم على المنفذ 8080
-        app.run(host='0.0.0.0', port=8080, debug=False)
-    except Exception as e:
-        print(f"خطأ في تشغيل الخادم: {e}")
-
-# تشغيل Flask في thread منفصل
-try:
-    flask_thread = Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-    print("✅ تم تشغيل خادم الويب بنجاح")
-except Exception as e:
-    print(f"❌ خطأ في تشغيل الخادم: {e}")
+if not BOT_TOKEN:
+    raise ValueError("❌ BOT_TOKEN not found")
 
 # قائمة النصوص الجديدة (10 كلمات مع الرمز ≈)
 TEXTS = [
@@ -59,12 +19,7 @@ TEXTS = [
     "كتاب ≈ مفتاح ≈ المعرفة ≈ والعلم ≈ ينير ≈ العقول ≈ ويوسع ≈ الآفاق ≈ نحو ≈ المستقبل",
     "طفل ≈ يلعب ≈ في ≈ الحديقة ≈ الكبيرة ≈ مع ≈ أصدقائه ≈ بسعادة ≈ وفرح ≈ غامر",
     "سفر ≈ يجلب ≈ تجارب ≈ جديدة ≈ وذكريات ≈ جميلة ≈ تبقى ≈ في ≈ القلب ≈ للأبد",
-    "قهوة ≈ صباحية ≈ تمنح ≈ الطاقة ≈ والنشاط ≈ لبداية ≈ يوم ≈ مليء ≈ بالإنجازات ≈ والعمل",
-    "بحر ≈ واسع ≈ عميق ≈ تزهر ≈ فيه ≈ الأسماك ≈ والشعاب ≈ المرجانية ≈ الملونة ≈ الرائعة",
-    "مدرسة ≈ تعلّم ≈ الأطفال ≈ العلوم ≈ والأدب ≈ وتعدهم ≈ لمستقبل ≈ مشرق ≈ وحافل ≈ بالنجاح",
-    "حديقة ≈ زهور ≈ ملونة ≈ تفوح ≈ منها ≈ الروائح ≈ العطرة ≈ في ≈ فصل ≈ الربيع",
-    "طعام ≈ صحي ≈ يساعد ≈ في ≈ بناء ≈ جسم ≈ قوي ≈ ويحمي ≈ من ≈ الأمراض",
-    "رياضة ≈ منتظمة ≈ تقوي ≈ الجسم ≈ والعقل ≈ وتعزز ≈ الصحة ≈ النفسية ≈ والبدنية ≈ معاً"
+    "قهوة ≈ صباحية ≈ تمنح ≈ الطاقة ≈ والنشاط ≈ لبداية ≈ يوم ≈ مليء ≈ بالإنجازات ≈ والعمل"
 ]
 
 # قائمة الكلمات للتكرار
@@ -226,6 +181,7 @@ def main():
     try:
         print("🚀 بدء تشغيل البوت...")
         application = Application.builder().token(BOT_TOKEN).build()
+        
         application.add_handler(CommandHandler('start', start_command))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         application.add_error_handler(error_handler)
