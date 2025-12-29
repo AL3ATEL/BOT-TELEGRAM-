@@ -14,7 +14,7 @@ from cachetools import TTLCache, LRUCache
 from functools import lru_cache
 import aiohttp
 
-BOT_TOKEN = "8494424963:AAFutfZKXuWJhBkrHcs9gD0EjakpK6Nryz0"
+BOT_TOKEN = "8219268566:AAH3yYMTnoIHz2x-F77Xpk5yFXTEWw9nMwU"
 OWNER_ID = 5562144078
 
 message_cache = {}
